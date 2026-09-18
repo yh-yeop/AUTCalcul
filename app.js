@@ -173,7 +173,10 @@
 
   const fmtEokShort = (v) => `${(v / 1e8).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}억`;
 
-  const pctOf = (g, n) => (n > 0 && n < MAX ? Math.round((g / growthReq(n)) * 1000) / 10 : 0);
+  // 현재 레벨에서 만렙까지 필요한 총 성장치 (진행률 100% 기준)
+  const toMax = (n) => { let t = 0; for (let k = Math.max(1, n); k < MAX; k++) t += growthReq(k); return t; };
+  const pctOf = (g, n) => (n > 0 && n < MAX ? Math.round((g / toMax(n)) * 1000) / 10 : 0);
+  const fromPct = (p, n) => clampInt(Math.round((p / 100) * toMax(n)), 0, 999999);
 
   // ---------- 렌더링: 입력 ----------
   const levelOptions = Array.from({ length: MAX + 1 }, (_, i) =>
@@ -223,7 +226,7 @@
     card.classList.toggle('is-off', off);
 
     $('[data-k="unit"]', card).textContent = state.mode === 'pct' ? '%' : '개';
-    $('[data-k="glabel"]', card).textContent = state.mode === 'pct' ? '현재 진행률' : '보유 성장치';
+    $('[data-k="glabel"]', card).textContent = state.mode === 'pct' ? '만렙까지 진행률' : '보유 성장치';
     if (!skipInput) {
       inp.value = disabled ? '' : state.mode === 'pct' ? String(pctOf(g, lv)) : String(g);
     }
@@ -240,8 +243,15 @@
     } else {
       const need = growthReq(lv);
       const reach = reachable(lv, g);
-      bar.style.width = `${Math.min(100, (g / need) * 100)}%`;
-      if (reach > lv) {
+      const pct = state.mode === 'pct';
+      const full = toMax(lv);
+      bar.style.width = `${Math.min(100, (g / (pct ? full : need)) * 100)}%`;
+      if (pct) {
+        const head = `${fmt(g)} / ${fmt(full)}개`;
+        info.innerHTML = reach > lv
+          ? `${head} · <b>Lv.${reach}</b>까지 가능`
+          : `${head} · <span class="warn">다음 레벨 ${fmt(need - g)}개 부족</span>`;
+      } else if (reach > lv) {
         info.innerHTML = `필요 ${fmt(need)} · 심볼로 <b>Lv.${reach}</b>까지 가능`;
       } else {
         const lack = need - g;
@@ -352,7 +362,7 @@
       const next = clampInt(e.target.value, 0, MAX);
       // 진행률 모드에서는 레벨이 바뀌어도 %를 유지
       if (state.mode === 'pct' && prev > 0 && prev < MAX && next > 0 && next < MAX) {
-        state.growth[i] = Math.round((pctOf(state.growth[i], prev) / 100) * growthReq(next));
+        state.growth[i] = fromPct(pctOf(state.growth[i], prev), next);
       }
       state.levels[i] = next;
       syncCard(i);
@@ -360,7 +370,7 @@
       const raw = Number(e.target.value);
       const lv = state.levels[i];
       if (!Number.isFinite(raw) || raw < 0) state.growth[i] = 0;
-      else if (state.mode === 'pct') state.growth[i] = clampInt(Math.round((raw / 100) * growthReq(lv)), 0, 999999);
+      else if (state.mode === 'pct') state.growth[i] = fromPct(raw, lv);
       else state.growth[i] = clampInt(raw, 0, 999999);
       syncCard(i, { skipInput: true });
     }
