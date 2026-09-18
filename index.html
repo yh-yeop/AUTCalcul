@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>어센틱심볼 최적 강화 계산기</title>
+<meta name="description" content="메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합을 계산합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
+<link rel="stylesheet" href="style.css">
+<script>
+  try { const t = localStorage.getItem('aut-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <div>
+      <h1>어센틱심볼 최적 강화 계산기</h1>
+      <p class="sub">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합</p>
+    </div>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="테마 전환" title="테마 전환">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>보유 현황</h2>
+      <div class="seg" role="radiogroup" aria-label="성장치 입력 방식">
+        <button type="button" data-mode="count" role="radio">심볼 개수</button>
+        <button type="button" data-mode="pct" role="radio">진행률 %</button>
+      </div>
+    </div>
+    <p class="hint">레벨 0 = 미보유. 성장치에는 게이지에 채워진 양과 인벤토리에 있는 심볼 개수를 모두 더해 입력하세요.</p>
+
+    <div id="regionsNormal" class="grid"></div>
+
+    <div class="subhead">
+      <h3>그랜드 어센틱심볼</h3>
+      <label class="switch"><input type="checkbox" id="includeGrand"><span>계산에 포함</span></label>
+    </div>
+    <div id="regionsGrand" class="grid"></div>
+  </section>
+
+  <section class="panel run">
+    <label for="countN" class="run-label">목표 업그레이드 횟수</label>
+    <div class="stepper">
+      <button type="button" data-step="-1" aria-label="1 감소">−</button>
+      <input id="countN" type="number" inputmode="numeric" min="1" max="200" value="13">
+      <button type="button" data-step="1" aria-label="1 증가">+</button>
+    </div>
+    <button id="calcBtn" type="button" class="primary">계산하기</button>
+    <div class="run-tools">
+      <button id="shareBtn" type="button" class="ghost">공유 링크 복사</button>
+      <button id="resetBtn" type="button" class="ghost">초기화</button>
+    </div>
+  </section>
+
+  <section id="result" class="panel result" aria-live="polite"></section>
+
+  <footer class="foot">
+    <p>데이터: 나무위키 「어센틱포스」 성장표 (필요 성장치 9n²+20n, 지역별 메소 공식). 계산 결과는 참고용이며 실제 게임 내 수치와 다를 수 있습니다.</p>
+    <p>교환권/이벤트로 얻은 심볼은 성장치에 직접 더해서 입력해 주세요.</p>
+  </footer>
+</main>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
