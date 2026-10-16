@@ -4,8 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>어센틱심볼 최적 강화 계산기</title>
-<meta name="description" content="메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합을 계산합니다.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
+<meta name="description" content="메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합, 또는 예산 안에서 가능한 최대 강화 횟수를 계산합니다.">
+<meta name="theme-color" content="#4b5bdc">
+<meta property="og:type" content="website">
+<meta property="og:title" content="어센틱심볼 최적 강화 계산기">
+<meta property="og:description" content="N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 예산 안에서 가능한 최대 강화 횟수">
+<meta property="og:url" content="https://yh-yeop.github.io/AUTCalcul/">
+<meta property="og:locale" content="ko_KR">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="style.css">
 <script>
   try { const t = localStorage.getItem('aut-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -16,7 +24,7 @@
   <div class="wrap top-inner">
     <div>
       <h1>어센틱심볼 최적 강화 계산기</h1>
-      <p class="sub">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합</p>
+      <p class="sub">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 또는 예산 안에서 올릴 수 있는 최대 횟수</p>
     </div>
     <button id="themeBtn" class="icon-btn" type="button" aria-label="테마 전환" title="테마 전환">◐</button>
   </div>
@@ -43,11 +51,24 @@
   </section>
 
   <section class="panel run">
-    <label for="countN" class="run-label">목표 업그레이드 횟수</label>
-    <div class="stepper">
-      <button type="button" data-step="-1" aria-label="1 감소">−</button>
-      <input id="countN" type="number" inputmode="numeric" min="1" max="200" value="13">
-      <button type="button" data-step="1" aria-label="1 증가">+</button>
+    <div class="seg goal-seg" role="radiogroup" aria-label="목표 방식">
+      <button type="button" data-goal="count" role="radio">횟수</button>
+      <button type="button" data-goal="budget" role="radio">예산</button>
+    </div>
+    <div id="goalCount" class="goal-in">
+      <label for="countN" class="run-label">목표 업그레이드 횟수</label>
+      <div class="stepper">
+        <button type="button" data-step="-1" aria-label="1 감소">−</button>
+        <input id="countN" type="number" inputmode="numeric" min="1" max="200" value="13">
+        <button type="button" data-step="1" aria-label="1 증가">+</button>
+      </div>
+    </div>
+    <div id="goalBudget" class="goal-in" hidden>
+      <label for="budgetIn" class="run-label">쓸 수 있는 메소</label>
+      <span class="input-unit budget">
+        <input id="budgetIn" type="number" inputmode="decimal" min="0" step="0.5" value="50" aria-label="예산 (억 메소)">
+        <em>억</em>
+      </span>
     </div>
     <button id="calcBtn" type="button" class="primary">계산하기</button>
     <div class="run-tools">
@@ -67,6 +88,7 @@
 <div id="toast" class="toast" role="status"></div>
 
 <script src="data.js"></script>
+<script src="calc.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

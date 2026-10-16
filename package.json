@@ -1,0 +1,9 @@
+{
+  "name": "autcalcul",
+  "private": true,
+  "description": "어센틱심볼 최적 강화 계산기 — 정적 사이트, 빌드 없음",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 5173"
+  }
+}

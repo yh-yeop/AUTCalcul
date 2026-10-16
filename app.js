@@ -2,48 +2,45 @@
   'use strict';
 
   const D = window.AUT_DATA;
+  const C = window.AUT_CALC.create(D);
   const R = D.regions;
   const MAX = D.maxLevel;
   const STORE_KEY = 'aut-calc-v1';
+  const MESO_CALC_URL = 'https://yh-yeop.github.io/meso_calcul/';
   const $ = (s, el = document) => el.querySelector(s);
 
-  // ---------- 데이터 헬퍼 ----------
-  const growthReq = (n) => D.growth(n);
-
-  function mesoCost(region, n) {
-    const v = region.meso && region.meso[n - 1];
-    if (Number.isFinite(v)) return v * D.mesoUnit;
-    // 폴백: 지역 공식
-    return Math.floor((-54 * n ** 3 + region.a10 * n * n + region.b10 * n) / 10) * D.mesoUnit;
-  }
+  const { growthReq, mesoCost, reachable, toMax, clampInt } = C;
 
   // ---------- 상태 ----------
   const defaults = () => ({
     levels: R.map(() => 0),
     growth: R.map(() => 0),
     n: 13,
-    mode: 'count',
+    goal: 'count',   // 'count' = N회 | 'budget' = 예산 안에서 최대 횟수
+    budget: 50,      // 억 단위
+    mode: 'count',   // 성장치 입력 방식: 'count' 개수 | 'pct' 진행률
     grand: true,
   });
 
   let state = loadState();
 
-  function clampInt(v, lo, hi) {
-    v = Math.floor(Number(v));
+  function clampNum(v, lo, hi) {
+    v = Number(v);
     if (!Number.isFinite(v)) return lo;
     return Math.min(hi, Math.max(lo, v));
   }
 
   function sanitize(s) {
     const d = defaults();
-    const out = {
+    return {
       levels: R.map((_, i) => clampInt(s.levels?.[i] ?? 0, 0, MAX)),
       growth: R.map((_, i) => clampInt(s.growth?.[i] ?? 0, 0, 999999)),
       n: clampInt(s.n ?? d.n, 1, 200),
+      goal: s.goal === 'budget' ? 'budget' : 'count',
+      budget: Math.round(clampNum(s.budget ?? d.budget, 0, 1e6) * 100) / 100,
       mode: s.mode === 'pct' ? 'pct' : 'count',
       grand: s.grand !== false,
     };
-    return out;
   }
 
   function loadState() {
@@ -54,6 +51,8 @@
         levels: split('lv'),
         growth: split('g'),
         n: Number(p.get('n')),
+        goal: p.get('go') === 'b' ? 'budget' : 'count',
+        budget: p.has('bu') ? Number(p.get('bu')) : undefined,
         mode: p.get('m') === 'p' ? 'pct' : 'count',
         grand: p.get('gr') !== '0',
       });
@@ -74,88 +73,17 @@
     p.set('lv', state.levels.join('.'));
     p.set('g', state.growth.join('.'));
     p.set('n', state.n);
+    if (state.goal === 'budget') { p.set('go', 'b'); p.set('bu', state.budget); }
     if (state.mode === 'pct') p.set('m', 'p');
     if (!state.grand) p.set('gr', '0');
     return `${location.origin}${location.pathname}?${p}`;
   }
 
-  // ---------- 계산 ----------
-  class MinHeap {
-    constructor() { this.a = []; }
-    get size() { return this.a.length; }
-    less(x, y) { return x.cost < y.cost || (x.cost === y.cost && x.idx < y.idx); }
-    push(v) {
-      const a = this.a; a.push(v);
-      let i = a.length - 1;
-      while (i > 0) {
-        const p = (i - 1) >> 1;
-        if (!this.less(a[i], a[p])) break;
-        [a[i], a[p]] = [a[p], a[i]]; i = p;
-      }
-    }
-    pop() {
-      const a = this.a, top = a[0], last = a.pop();
-      if (a.length) {
-        a[0] = last;
-        let i = 0;
-        for (;;) {
-          const l = 2 * i + 1, r = l + 1;
-          let m = i;
-          if (l < a.length && this.less(a[l], a[m])) m = l;
-          if (r < a.length && this.less(a[r], a[m])) m = r;
-          if (m === i) break;
-          [a[i], a[m]] = [a[m], a[i]]; i = m;
-        }
-      }
-      return top;
-    }
-  }
-
-  // 지역별 비용은 레벨이 오를수록 증가하므로, 매번 가장 싼 "다음 1회"를 고르는 탐욕법이 최적해다.
-  function solve(s) {
-    const active = R.map((r, i) => s.levels[i] > 0 && (s.grand || !r.grand));
-    const lvl = s.levels.slice();
-    const left = s.growth.slice();
-    const heap = new MinHeap();
-    const blocked = {}; // idx -> {level, need, have}
-
-    const offer = (i) => {
-      const n = lvl[i];
-      if (n >= MAX) return;
-      const need = growthReq(n);
-      if (left[i] < need) { blocked[i] = { level: n, need, have: left[i] }; return; }
-      heap.push({ idx: i, level: n, cost: mesoCost(R[i], n), need });
-    };
-
-    R.forEach((_, i) => { if (active[i]) offer(i); });
-
-    const steps = [];
-    let total = 0;
-    while (steps.length < s.n && heap.size) {
-      const t = heap.pop();
-      lvl[t.idx]++;
-      left[t.idx] -= t.need;
-      total += t.cost;
-      steps.push({ ...t, total });
-      offer(t.idx);
-    }
-
-    const rows = R.map((r, i) => ({
-      idx: i, region: r, active: active[i],
-      from: s.levels[i], to: lvl[i], count: lvl[i] - s.levels[i],
-      meso: steps.filter((x) => x.idx === i).reduce((a, x) => a + x.cost, 0),
-      left: left[i],
-    }));
-
-    return { steps, total, rows, blocked, short: s.n - steps.length };
-  }
-
-  // 보유 성장치로 도달 가능한 최대 레벨
-  function reachable(level, growth) {
-    let n = level, g = growth;
-    while (n > 0 && n < MAX && g >= growthReq(n)) { g -= growthReq(n); n++; }
-    return n;
-  }
+  // 계산기 입력 → 계산 입력 (예산은 억 → 메소)
+  const solveInput = (s) => ({
+    levels: s.levels, growth: s.growth, grand: s.grand,
+    goal: s.goal, n: s.n, budget: s.budget * 1e8,
+  });
 
   // ---------- 포맷 ----------
   const nf = new Intl.NumberFormat('ko-KR');
@@ -172,9 +100,8 @@
   }
 
   const fmtEokShort = (v) => `${(v / 1e8).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}억`;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  // 현재 레벨에서 만렙까지 필요한 총 성장치 (진행률 100% 기준)
-  const toMax = (n) => { let t = 0; for (let k = Math.max(1, n); k < MAX; k++) t += growthReq(k); return t; };
   const pctOf = (g, n) => (n > 0 && n < MAX ? Math.round((g / toMax(n)) * 1000) / 10 : 0);
   const fromPct = (p, n) => clampInt(Math.round((p / 100) * toMax(n)), 0, 999999);
 
@@ -261,17 +188,27 @@
     }
   }
 
+  function syncGoal() {
+    const budget = state.goal === 'budget';
+    document.querySelectorAll('.goal-seg [data-goal]').forEach((b) =>
+      b.setAttribute('aria-checked', String(b.dataset.goal === state.goal)));
+    $('#goalCount').hidden = budget;
+    $('#goalBudget').hidden = !budget;
+    $('#countN').value = state.n;
+    $('#budgetIn').value = state.budget;
+  }
+
   function syncAll() {
     R.forEach((_, i) => syncCard(i));
     document.querySelectorAll('.seg [data-mode]').forEach((b) =>
       b.setAttribute('aria-checked', String(b.dataset.mode === state.mode)));
     $('#includeGrand').checked = state.grand;
-    $('#countN').value = state.n;
+    syncGoal();
   }
 
   // ---------- 렌더링: 결과 ----------
   function renderResult() {
-    const res = solve(state);
+    const res = C.solve(solveInput(state));
     const el = $('#result');
     const anyActive = res.rows.some((r) => r.active);
 
@@ -282,9 +219,19 @@
 
     const changed = res.rows.filter((r) => r.count > 0);
     const done = res.steps.length;
+    const budgetMode = res.goal === 'budget';
 
     const notes = [];
-    if (res.short > 0) {
+    if (budgetMode) {
+      if (res.next) {
+        const r = R[res.next.idx];
+        notes.push(`<li>예산 안에서 <b>${fmt(done)}회</b>까지 가능합니다. 다음으로 싼 강화(${r.name} Lv.${res.next.level}→${res.next.level + 1}, ${fmtKor(res.next.cost)})까지 하려면 <b>${fmtKor(res.next.lack)}</b>이 더 필요합니다.</li>`);
+      } else if (res.exhausted && done > 0) {
+        notes.push(`<li>성장치로 올릴 수 있는 강화를 모두 했습니다. 예산이 <b>${fmtKor(res.remaining)}</b> 남습니다.</li>`);
+      } else if (done === 0 && res.exhausted) {
+        notes.push(`<li class="bad">성장치가 부족하거나 만렙이라 강화할 수 있는 지역이 없습니다.</li>`);
+      }
+    } else if (res.short > 0) {
       notes.push(`<li class="bad">성장치가 부족하거나 만렙이라 <b>${fmt(done)}회</b>까지만 강화할 수 있습니다 (요청 ${fmt(state.n)}회, <b>${fmt(res.short)}회 부족</b>).</li>`);
     }
     res.rows.forEach((row) => {
@@ -315,12 +262,26 @@
         <span class="acc">누적 ${fmtKor(s.total)}</span>
       </li>`).join('');
 
+    const totalBlock = budgetMode
+      ? `<div class="total">
+          <span class="total-label">예산 ${fmtEokShort(res.budget)} 안에서 · ${fmt(done)}회 강화</span>
+          <strong class="total-main">${fmtKor(res.total)} 메소</strong>
+          <span class="total-sub">${fmt(res.total)} 사용 · 남은 예산 ${fmtKor(res.remaining)}</span>
+        </div>`
+      : `<div class="total">
+          <span class="total-label">총 필요 메소 · ${fmt(done)}회 강화</span>
+          <strong class="total-main">${fmtKor(res.total)} 메소</strong>
+          <span class="total-sub">${fmt(res.total)} (약 ${fmtEokShort(res.total)})</span>
+        </div>`;
+
+    // 메소 적립 계산기로 목표 메소를 넘겨 "며칠 걸리나"를 바로 본다
+    const handoff = !budgetMode && res.total > 0
+      ? `<p class="handoff"><a class="ghost link" target="_blank" rel="noopener"
+            href="${esc(`${MESO_CALC_URL}#goal=${Math.round(res.total / 1e6) / 100}`)}">메소 적립 계산기에서 ${fmtEokShort(res.total)} 모으는 데 며칠 걸리는지 보기 ↗</a></p>`
+      : '';
+
     el.innerHTML = `
-      <div class="total">
-        <span class="total-label">총 필요 메소 · ${fmt(done)}회 강화</span>
-        <strong class="total-main">${fmtKor(res.total)} 메소</strong>
-        <span class="total-sub">${fmt(res.total)} (약 ${fmtEokShort(res.total)})</span>
-      </div>
+      ${totalBlock}
       ${notes.length ? `<ul class="notes">${notes.join('')}</ul>` : ''}
       ${changed.length ? `
       <div class="summary-line">${changed.map((r) => `<span class="chip" data-region="${r.region.id}"><span class="dot"></span>${r.region.name} ${r.from}→${r.to}</span>`).join('')}</div>` : ''}
@@ -334,7 +295,8 @@
       <details class="steps">
         <summary>업글 순서 상세 보기 <span>(${done}단계)</span></summary>
         <ol>${stepRows}</ol>
-      </details>` : ''}`;
+      </details>` : ''}
+      ${handoff}`;
   }
 
   // 막힌 강화가 실제 선택된 마지막 강화보다 쌌다면(= 심볼만 있었으면 골랐을 강화) 안내
@@ -401,6 +363,12 @@
       update();
     }));
 
+    document.querySelectorAll('.goal-seg [data-goal]').forEach((b) => b.addEventListener('click', () => {
+      state.goal = b.dataset.goal === 'budget' ? 'budget' : 'count';
+      syncGoal();
+      update();
+    }));
+
     $('#includeGrand').addEventListener('change', (e) => {
       state.grand = e.target.checked;
       syncAll();
@@ -415,6 +383,13 @@
       nIn.value = state.n;
       update();
     }));
+
+    const bIn = $('#budgetIn');
+    bIn.addEventListener('input', () => {
+      state.budget = Math.round(clampNum(bIn.value, 0, 1e6) * 100) / 100;
+      update();
+    });
+    bIn.addEventListener('blur', () => { bIn.value = state.budget; });
 
     $('#calcBtn').addEventListener('click', () => {
       renderResult();
@@ -459,5 +434,5 @@
     history.replaceState(null, '', location.pathname);
   }
 
-  window.__aut = { solve, mesoCost, growthReq };
+  window.__aut = { solve: (s) => C.solve(solveInput(s)), mesoCost, growthReq, calc: C };
 })();

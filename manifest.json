@@ -1,0 +1,14 @@
+{
+  "name": "어센틱심볼 최적 강화 계산기",
+  "short_name": "어센틱 계산기",
+  "description": "메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합, 예산 안에서 가능한 최대 강화 횟수를 계산합니다.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f5f8",
+  "theme_color": "#4b5bdc",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
