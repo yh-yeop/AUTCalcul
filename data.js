@@ -6,8 +6,19 @@
 // daily: 일일 퀘스트 심볼 획득량
 (function (root) {
   const AUT_DATA = {
+    // 데이터 출처와 기준일. 수치를 고치면 updatedAt 도 함께 갱신한다 (화면 푸터에 표시됨).
+    meta: {
+      source: '나무위키 「어센틱포스」',
+      url: 'https://namu.wiki/w/어센틱포스',
+      updatedAt: '2026-10-16',
+    },
     maxLevel: 11,
     mesoUnit: 100000,
+    // 강화 1회(레벨 +1)의 효과
+    forcePerLevel: 10,      // 어센틱포스 +10 (확정)
+    // 주스탯 +500/레벨은 일반 직업 기준으로 알려진 값이나 출처를 확인하지 못했다 — 확인 필요.
+    // 제논(올스탯), 데몬어벤저(MaxHP) 등 예외 직업은 다르다. 화면에는 "약" 으로 표시한다.
+    mainStatPerLevel: 500,
     // 필요 성장치 (레벨 n → n+1) = 9n² + 20n
     growth: (n) => 9 * n * n + 20 * n,
     regions: [
