@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>어센틱심볼 최적 강화 계산기</title>
-<meta name="description" content="메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합, 또는 예산 안에서 가능한 최대 강화 횟수를 계산합니다.">
+<meta name="description" content="메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합, 예산 안에서 가능한 최대 강화 횟수, 전 지역 목표 레벨까지의 비용과 일퀘 기준 소요 일수를 계산합니다.">
 <meta name="theme-color" content="#4b5bdc">
 <meta property="og:type" content="website">
 <meta property="og:title" content="어센틱심볼 최적 강화 계산기">
@@ -24,7 +24,7 @@
   <div class="wrap top-inner">
     <div>
       <h1>어센틱심볼 최적 강화 계산기</h1>
-      <p class="sub">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 또는 예산 안에서 올릴 수 있는 최대 횟수</p>
+      <p class="sub">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 예산 안에서 올릴 수 있는 최대 횟수, 목표 레벨까지의 비용과 일퀘 일수</p>
     </div>
     <button id="themeBtn" class="icon-btn" type="button" aria-label="테마 전환" title="테마 전환">◐</button>
   </div>
@@ -48,12 +48,24 @@
       <label class="switch"><input type="checkbox" id="includeGrand"><span>계산에 포함</span></label>
     </div>
     <div id="regionsGrand" class="grid"></div>
+
+    <div class="subhead tickets-row">
+      <div>
+        <h3><label for="ticketsIn">지역 선택 심볼 교환권</label></h3>
+        <p class="hint tight">아무 지역에나 쓸 수 있는 심볼로 보고, 성장치가 부족해 막힌 강화가 가장 싸면 그 부족분을 채우는 데 씁니다 (근사 계산).</p>
+      </div>
+      <span class="input-unit tickets">
+        <input id="ticketsIn" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="지역 선택 심볼 교환권 개수">
+        <em>개</em>
+      </span>
+    </div>
   </section>
 
   <section class="panel run">
     <div class="seg goal-seg" role="radiogroup" aria-label="목표 방식">
       <button type="button" data-goal="count" role="radio">횟수</button>
       <button type="button" data-goal="budget" role="radio">예산</button>
+      <button type="button" data-goal="target" role="radio">목표 레벨</button>
     </div>
     <div id="goalCount" class="goal-in">
       <label for="countN" class="run-label">목표 업그레이드 횟수</label>
@@ -70,9 +82,14 @@
         <em>억</em>
       </span>
     </div>
+    <div id="goalTarget" class="goal-in" hidden>
+      <label for="targetLv" class="run-label">전 지역 목표 레벨</label>
+      <select id="targetLv" class="target-select" aria-label="목표 레벨"></select>
+    </div>
     <button id="calcBtn" type="button" class="primary">계산하기</button>
     <div class="run-tools">
       <button id="shareBtn" type="button" class="ghost">공유 링크 복사</button>
+      <button id="imgBtn" type="button" class="ghost">결과 이미지 저장</button>
       <button id="resetBtn" type="button" class="ghost">초기화</button>
     </div>
   </section>
@@ -80,8 +97,8 @@
   <section id="result" class="panel result" aria-live="polite"></section>
 
   <footer class="foot">
-    <p>데이터: 나무위키 「어센틱포스」 성장표 (필요 성장치 9n²+20n, 지역별 메소 공식). 계산 결과는 참고용이며 실제 게임 내 수치와 다를 수 있습니다.</p>
-    <p>교환권/이벤트로 얻은 심볼은 성장치에 직접 더해서 입력해 주세요.</p>
+    <p>데이터: <a id="dataSource" href="#" target="_blank" rel="noopener">나무위키 「어센틱포스」</a> 성장표 (필요 성장치 9n²+20n, 지역별 메소 공식) · <span id="dataDate">데이터 기준일 —</span>. 계산 결과는 참고용이며 실제 게임 내 수치와 다를 수 있습니다.</p>
+    <p>특정 지역 전용 교환권·이벤트 심볼은 그 지역 성장치에 직접 더해서 입력해 주세요. 지역 선택 교환권은 위의 입력란에 개수만 넣으면 됩니다.</p>
   </footer>
 </main>
 
@@ -89,6 +106,7 @@
 
 <script src="data.js"></script>
 <script src="calc.js"></script>
+<script src="share.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
