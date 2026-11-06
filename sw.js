@@ -1,7 +1,7 @@
 // 오프라인 캐시 — 정적 파일을 프리캐시하고 stale-while-revalidate 로 응답한다.
 // 파일을 바꾸면 VERSION 을 올려야 옛 캐시가 activate 때 지워진다.
 // GitHub Pages 하위 경로(/AUTCalcul/)에서 동작하도록 경로는 모두 상대 경로.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = `aut-${VERSION}`;
 const PRECACHE = [
   './', './index.html', './style.css', './app.js', './calc.js', './data.js',
