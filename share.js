@@ -3,12 +3,13 @@
 (function (root) {
   'use strict';
 
+  // 색은 화면 테마와 무관하게 메소 계산기 다크 팔레트로 고정
   const P = {
-    bg: '#111318', panel: '#1a1d24', line: '#2d313c',
-    text: '#e8eaf0', dim: '#9aa1b2', faint: '#6b7284',
-    accent: '#8b96ff', warn: '#fb923c',
+    bg: '#111112', panel: '#19191B', line: '#34343A',
+    text: '#EDEDEF', dim: '#A1A1A8', faint: '#8E8E96',
+    accent: '#E9B949', warn: '#F2784B',
   };
-  const SANS = '"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif';
+  const SANS = '"Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -69,15 +70,13 @@
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
 
-    // 윗줄 + 액센트 선
-    ctx.fillStyle = P.accent;
+    // 윗줄 (사이트 이름) + 구분선
+    ctx.fillStyle = P.dim;
     ctx.font = `600 24px ${SANS}`;
     ctx.fillText(d.eyebrow, M, M + 20);
     const ebW = ctx.measureText(d.eyebrow).width;
-    const g = ctx.createLinearGradient(M + ebW + 18, 0, W - M, 0);
-    g.addColorStop(0, P.accent); g.addColorStop(1, 'rgba(139,150,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(M + ebW + 18, M + 10, W - M * 2 - ebW - 18, 2);
+    ctx.fillStyle = P.line;
+    ctx.fillRect(M + ebW + 18, M + 11, W - M * 2 - ebW - 18, 2);
 
     // 제목
     fitText(ctx, d.title, W - M * 2, 40, '600');

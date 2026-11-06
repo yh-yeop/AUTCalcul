@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>어센틱심볼 최적 강화 계산기</title>
 <meta name="description" content="메이플스토리 어센틱심볼 N회 강화를 최소 메소로 하는 지역/레벨 조합, 예산 안에서 가능한 최대 강화 횟수, 전 지역 목표 레벨까지의 비용과 일퀘 기준 소요 일수를 계산합니다.">
-<meta name="theme-color" content="#4b5bdc">
+<meta name="theme-color" content="#111112">
 <meta property="og:type" content="website">
 <meta property="og:title" content="어센틱심볼 최적 강화 계산기">
 <meta property="og:description" content="N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 예산 안에서 가능한 최대 강화 횟수">
@@ -15,23 +15,25 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <script src="/install.js"></script>
-<link rel="stylesheet" href="style.css">
 <script>
-  try { const t = localStorage.getItem('aut-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  // 저장된 테마를 첫 그리기 전에 적용 (깜빡임 방지). 없으면 시스템 설정
+  try { const t = localStorage.getItem('aut-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
 </script>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
-  <div class="wrap top-inner">
-    <div>
-      <h1>어센틱심볼 최적 강화 계산기</h1>
-      <p class="sub">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 예산 안에서 올릴 수 있는 최대 횟수, 목표 레벨까지의 비용과 일퀘 일수</p>
-    </div>
-    <button id="themeBtn" class="icon-btn" type="button" aria-label="테마 전환" title="테마 전환">◐</button>
-  </div>
+<header class="top wrap">
+  <a class="icon-btn" href="https://yh-yeop.github.io/p/#maple" title="메이플 계산기 모음" aria-label="메이플 계산기 모음">
+    <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+  </a>
+  <h1 class="brand"><img src="icon.svg" alt="">어센틱심볼 최적 강화 계산기</h1>
+  <button id="themeBtn" class="icon-btn" type="button" aria-label="테마 전환" title="테마 전환">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+  </button>
 </header>
 
 <main class="wrap">
+  <p class="lead">N번 올릴 때 메소가 가장 적게 드는 지역·레벨 조합, 예산 안에서 올릴 수 있는 최대 횟수, 목표 레벨까지의 비용과 일퀘 일수</p>
   <section class="panel">
     <div class="panel-head">
       <h2>보유 현황</h2>

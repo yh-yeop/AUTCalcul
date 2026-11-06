@@ -398,7 +398,7 @@
   // ---------- 결과 이미지 ----------
   function regionColor(id) {
     const v = getComputedStyle(document.documentElement).getPropertyValue(`--r-${id}`).trim();
-    return v || '#8b96ff';
+    return v || '#A1A1A8';
   }
 
   async function saveImage() {
@@ -560,7 +560,7 @@
     $('#themeBtn').addEventListener('click', () => {
       const root = document.documentElement;
       const cur = root.dataset.theme
-        || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
       const next = cur === 'dark' ? 'light' : 'dark';
       root.dataset.theme = next;
       try { localStorage.setItem('aut-theme', next); } catch (e) {}
